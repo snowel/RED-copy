@@ -9,9 +9,9 @@ import (
 )
 func main() {
 
-		  file := OpenFile("redcopy.go")
+		  file := OpenFile("roof")
 		  fileBits := ByteToBit(file)
-		  WriteFile("Red.txt", RawBitToByte(MultiplyBits(fileBits, 20)))
+		  WriteFile("superroof", RawBitToByte(MultiplyBits(fileBits, 20)))
 }
 
 func OpenFile(filename string) []byte {
@@ -46,6 +46,7 @@ func ByteToBit(data []byte) []bit {
 		  return bitSlice
 }
 
+// Converts a bit slice to a byte slice, placing each bit in a bite of width 8 (currenyl hard coded)
 func BitToByte(data []bit) []byte {
 		  length := len(data)
 		  var byteSlice []byte
@@ -61,6 +62,7 @@ func BitToByte(data []bit) []byte {
 		  return byteSlice
 }
 
+// Converts a bit slice to a byte slice, but treats each bit as a whole byte. This is 8x redundancy.
 func RawBitToByte(data []bit) []byte {
 		  length := len(data)
 		  var byteSlice []byte
@@ -91,7 +93,7 @@ func MultiplyBits(data []bit, ply uint) []bit {
 		  var redSlice []bit
 
 		  for i := 0; i < length; i++ {
-					 for j := uint(0); j < 8*ply; j++ {
+					 for j := uint(0); j < ply; j++ {
 								redSlice = append(redSlice, data[i])
 					 }
 		  }
@@ -99,96 +101,53 @@ func MultiplyBits(data []bit, ply uint) []bit {
 		  return redSlice
 }
 
-// Multiply a single byte into an array of 8 bytes, each correponding to the 
-func OctoplyByte(input byte) []byte {
-		  bitMask := byte(1)
-		  redByte := make([]byte, 8)
-		  for i := 0; i < 8; i++ {
-					 if 1 == bitMask & (input << (i+1)) {
-								redByte[i] = byte(one)
-					 } else {
-								redByte[i] = byte(zero)
+// Pre-built operations
+
+// Appends a filan byte which shows the multiplicity
+func REDCopy(filename string, mutiplicity uint) {
+		  WriteFile(append(RawBitToByte(MultiplyBits(ByteToBit(OpenFile(filename)), multiplicity)), (multiplicity * 8))) 
+		  // Wanted to try composing it... is there some other syntax for this?...
+}
+
+func Homogeneous[E comparable](slice []E) bool {
+		  length := len(slice)
+		  ref := slice[0]
+		  for i := 0; i < length; i++{
+					 if i != slice[i] {
+								return false
 					 }
 		  }
-		  return redByte
+
+		  return true
 }
 
-// Multiply a file's bytes by 8.
-func OctoplyFile(file []byte) []byte {
-		  var redFile []byte
-		  length := len(file)
+func IsCorrupt(data []bit, multiplicity uint) int {
+		  length := len(data)
 
-		  for i := 0; i < length; i++ {
-					 redByte := OctoplyByte(file[i])
-					 redFile = append(redFile, redByte...)
+		  for i := 0; i < length; i += mulitplicity {
+					 if !Homogenenous(data[i:i+multiplicity]) {
+								return i
+					 }
 		  }
-		  return redFile
-}
-/*
-// Eval byte
-func EvalByte(val byte) int {
-		  avg := byte(0)
-		  bitMask := byte(1)
-
-		  for i := 0; i < 8; i++ {
-					 avg += bitMask & (val << (i+1))
-		  }
-
-		  if avg > 4 {
-					 return 1
-		  } else {
-					 return 0
-		  }
+		  return -1
 }
 
-// 
-func QuickColimator(redFile []byte, ply int) []byte{
-		  var rawFile []byte
-		  length := len(redFile)
+// Reducess a redundant (RED) series of bits to clear data (the origianl file).
+//This is an unsafe method which assumes no corruption and that you remeber the multiplicity correctly
+func DevideBits(redData []Bits, multiplicity uint) []bits {
+		  var clearData []bit
+		  length := len(redData)
+		  i := uint(0)
 
-		  if length % ply != 0 {
-					 fmt.Println("Something is wrong with the RED file. Most likely the wrong number of ply.")
+		  for i < length {
+					 clearData = append(clearData, redData[i])
+					 i += multiplicity
 		  }
 
-		  bitMask := byte(1)
-		  for i := 0; i < length; i + ply {
-					 singleByte := byte(0)
-					 bitShift := ply
-					 bigEnd := 0
-					 
-					 for bitShift > 0 {
-								bitVal := byte(refFile[i + bigEnd] & bitMask)
-								singleByte = (singleByte | bitVal) << bitShift
-								bitShift--
-								bitEnd++
-					 } 
-					 rawFile = append(rawFile, singleByte)
-		  }
-		  return rawFile
+		  return clearData
 }
 
-func CorruptionAwareCollimator(redFile []byte, ply int) []byte {
-		  var rawFile []byte
-		  length := len(redFile)
+// Determin the multiplicity of a RED file
+func QualifyMulitplicity(data []bit) int {
 
-		  if length % ply != 0 {
-					 fmt.Println("Something is wrong with the RED file. Most likely the wrong number of ply.")
-		  }
-
-		  bitMask := byte(1)
-		  for i := 0; i < length; i + ply {
-					 singleByte := byte(0)
-					 bitShift := ply
-					 bigEnd := 0
-					 
-					 for bitShift > 0 {
-								bitVal := byte(refFile[i + bigEnd] & bitMask)
-								singleByte = (singleByte | bitVal) << bitShift
-								bitShift--
-								bitEnd++
-					 } 
-					 rawFile = append(rawFile, singleByte)
-		  }
-		  return rawFile
 }
-*/
