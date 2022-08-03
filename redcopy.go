@@ -9,9 +9,19 @@ import (
 )
 func main() {
 
-		  file := OpenFile("roof")
-		  fileBits := ByteToBit(file)
-		  WriteFile("superroof", RawBitToByte(MultiplyBits(fileBits, 20)))
+		  if len(os.Args[1:]) < 1 {
+					 fmt.Println("Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
+		  } else if os.Args[1] == "write" {
+					 file := OpenFile(os.Args[2])
+					 fileBits := ByteToBit(file)
+					 WriteFile(os.Args[2] + ".RED", RawBitToByte(MultiplyBits(fileBits, 20)))
+		  } else if os.Args[1] == "read" {
+					 file := OpenFile(os.Args[2])
+					 fileBits := ByteToBit(file)
+					 WriteFile(os.Args[3], BitToByte(DevideBits(fileBits, 8)))
+		  }	else {
+					 fmt.Println("Not those Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
+		  }
 }
 
 func OpenFile(filename string) []byte {
@@ -41,7 +51,6 @@ func ByteToBit(data []byte) []bit {
 
 		  for i := 0; i < length; i++ {
 					 bitSlice = append(bitSlice, BreakdownByte(data[i])...)
-					 fmt.Println(BreakdownByte(data[i]))
 		  }
 		  return bitSlice
 }
@@ -49,15 +58,21 @@ func ByteToBit(data []byte) []bit {
 // Converts a bit slice to a byte slice, placing each bit in a bite of width 8 (currenyl hard coded)
 func BitToByte(data []bit) []byte {
 		  length := len(data)
-		  var byteSlice []byte
+		  var (
+					 byteSlice []byte
+					 i int
+					 singleByte byte
+		  )
 
-		  for i := 0; i < length; i += 8 {
-					 var singleByte byte
+		  for i < length {
 					 for j := 0; j < 8; j++ {//Maybe I can reduce insted of double loop
 								// For each innner loop, the byte is ored to the val of the bit masked to the position in the inner loop. 
-								singleByte = singleByte | (byte(data[i + j]) & byte(2^(7-j)))
+								singleByte = singleByte | (byte(data[i + j]) & byte(Pow(2, (7-j))))
+								fmt.Println(i)
 					 }
 					 byteSlice = append(byteSlice, singleByte)
+					 i += 8
+					 singleByte = 0
 		  }
 		  return byteSlice
 }
@@ -104,8 +119,8 @@ func MultiplyBits(data []bit, ply uint) []bit {
 // Pre-built operations
 
 // Appends a filan byte which shows the multiplicity
-func REDCopy(filename string, mutiplicity uint) {
-		  WriteFile(append(RawBitToByte(MultiplyBits(ByteToBit(OpenFile(filename)), multiplicity)), (multiplicity * 8))) 
+func REDCopy(filename string, multiplicity uint) {
+		  WriteFile(filename + ".red", append(RawBitToByte(MultiplyBits(ByteToBit(OpenFile(filename)), multiplicity)), byte(multiplicity * 8))) 
 		  // Wanted to try composing it... is there some other syntax for this?...
 }
 
@@ -113,7 +128,7 @@ func Homogeneous[E comparable](slice []E) bool {
 		  length := len(slice)
 		  ref := slice[0]
 		  for i := 0; i < length; i++{
-					 if i != slice[i] {
+					 if ref != slice[i] {
 								return false
 					 }
 		  }
@@ -121,22 +136,54 @@ func Homogeneous[E comparable](slice []E) bool {
 		  return true
 }
 
-func IsCorrupt(data []bit, multiplicity uint) int {
-		  length := len(data)
+func DominantElem[E comparable](slice []E) E {
+		  length := len(slice)
+		  collect := make(map[E]int)
+		  for i := 0; i < length; i++{
+					 collect[slice[i]]++
+		  }
 
-		  for i := 0; i < length; i += mulitplicity {
-					 if !Homogenenous(data[i:i+multiplicity]) {
-								return i
+		  var (
+					 domElem E
+					 domOccs int
+		  )
+
+		  for k, v := range collect {
+					 if v > domOccs {
+								domElem = k
+					 }
+		  }
+
+		  return domElem
+}
+
+func IsCorrupt(data []bit, multiplicity uint) int {
+		  length := uint(len(data))
+
+		  for i := uint(0); i < length; i += multiplicity {
+					 if !Homogeneous(data[i:i+multiplicity]) {
+								return int(i)
 					 }
 		  }
 		  return -1
 }
 
+func CorruptionAwareBitDevide(redData []bit, multiplicity uint) []bit { // better error system
+		  length := uint(len(redData))
+		  var clearData []bit
+
+		  for i := uint(0); i < length; i += multiplicity {
+					 clearData = append(clearData, DominantElem(redData[i:i+multiplicity]))
+		  }
+		  return clearData
+		  
+}
+
 // Reducess a redundant (RED) series of bits to clear data (the origianl file).
 //This is an unsafe method which assumes no corruption and that you remeber the multiplicity correctly
-func DevideBits(redData []Bits, multiplicity uint) []bits {
+func DevideBits(redData []bit, multiplicity uint) []bit {
 		  var clearData []bit
-		  length := len(redData)
+		  length := uint(len(redData))
 		  i := uint(0)
 
 		  for i < length {
@@ -146,8 +193,23 @@ func DevideBits(redData []Bits, multiplicity uint) []bits {
 
 		  return clearData
 }
-
+/*
 // Determin the multiplicity of a RED file
 func QualifyMulitplicity(data []bit) int {
+		  passed := false
+		  var mult int
 
+		  for passed == false {
+					 // figure out the smallest
+		  }
+
+}
+
+*/
+
+func Pow(num byte, pow int) byte {
+		  if pow == 0 {return 1}
+		  if pow == 1 {return num}
+		  if pow == 2 {return num * num}
+		  return Pow(num, pow - 1) * num 
 }
