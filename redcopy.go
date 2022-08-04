@@ -13,8 +13,12 @@ func main() {
 					 fmt.Println("Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
 		  } else if os.Args[1] == "write" {
 					 file := OpenFile(os.Args[2])
+					 fmt.Println(file)
+					 //fmt.Println(len(file))
 					 fileBits := ByteToBit(file)
-					 WriteFile(os.Args[2] + ".RED", RawBitToByte(MultiplyBits(fileBits, 20)))
+					 //fmt.Println(fileBits)
+					 //fmt.Println(len(fileBits))
+					 WriteFile(os.Args[2] + ".RED", BitToByte(MultiplyBits(fileBits, 8)))
 		  } else if os.Args[1] == "read" {
 					 file := OpenFile(os.Args[2])
 					 fileBits := ByteToBit(file)
@@ -47,7 +51,7 @@ const (
 
 func ByteToBit(data []byte) []bit {
 		  length := len(data)
-		  bitSlice := make([]bit, length)
+		  var bitSlice []bit
 
 		  for i := 0; i < length; i++ {
 					 bitSlice = append(bitSlice, BreakdownByte(data[i])...)
@@ -60,15 +64,13 @@ func BitToByte(data []bit) []byte {
 		  length := len(data)
 		  var (
 					 byteSlice []byte
-					 i int
 					 singleByte byte
+					 i int
 		  )
 
 		  for i < length {
 					 for j := 0; j < 8; j++ {//Maybe I can reduce insted of double loop
-								// For each innner loop, the byte is ored to the val of the bit masked to the position in the inner loop. 
-								singleByte = singleByte | (byte(data[i + j]) & byte(Pow(2, (7-j))))
-								fmt.Println(i)
+								singleByte = singleByte | ((byte(data[i + j])) & byte(Pow(2, 7-j)))
 					 }
 					 byteSlice = append(byteSlice, singleByte)
 					 i += 8
@@ -90,12 +92,12 @@ func RawBitToByte(data []bit) []byte {
 
 func BreakdownByte(input byte) []bit {
 		  bitMask := byte(255)
-		  redByte := make([]bit, 8)
+		  var redByte []bit
 		  for i := 0; i < 8; i++ {
 					 if 0 < (bitMask & byte(2^(7-i))) & input {
-								redByte[i] = one
+								redByte = append(redByte, one)
 					 } else {
-								redByte[i] = zero
+								redByte = append(redByte , zero)
 					 }
 		  }
 		  return redByte

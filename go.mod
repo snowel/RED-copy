@@ -1,3 +1,3 @@
-module RED_Copy
+module redcopy
 
 go 1.18
