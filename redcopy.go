@@ -1,17 +1,17 @@
 package main
 
 import (
-		  //"RED-copy/redread"
-		  //"RED-copy/redwrite"
 		  "os"
 		  "log"
 		  "fmt"
 )
 func main() {
 
-		  if len(os.Args[1:]) < 1 {
+		  cmd := os.Args
+		  cL := len(cmd[1:])
+		  if cL < 1 {
 					 fmt.Println("Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
-		  } else if os.Args[1] == "test" {
+		  } else if cmd[1] == "test" {
 					 // --- Opened file
 					 file := OpenFile(os.Args[2])
 					 fmt.Println("The base file is : ", len(file))
@@ -32,16 +32,48 @@ func main() {
 					 }
 					 fmt.Println("")
 
-		  } else if os.Args[1] == "write" {
+		  } else if cmd[1] == "write" {
 					 file := OpenFile(os.Args[2])
 					 fileBits := ByteToBit(file)
-					 WriteFile(os.Args[2] + ".RED", BitToByte(MultiplyBits(fileBits, 8)))
-		  } else if os.Args[1] == "read" {
+
+					 var mult uint
+					 if cL >= 3 {
+								switch cmd[3] {
+								case "weak": mult = 3
+								case "normal": mult = 8
+								case "strong": mult = 32
+								case "super": mult = 64
+								case "ludicrous": mult = 255
+								default: mult = 8
+								}
+					 } else {
+								mult = 8
+					 }
+					 WriteFile(cmd[2] + ".RED", BitToByte(MultiplyBits(fileBits, mult)))
+		  } else if cmd[1] == "read" {
 					 file := OpenFile(os.Args[2])
-					 fmt.Println("--------------", len(file))
 					 fileBits := ByteToBit(file)
-					 fmt.Println(fileBits)
-					 WriteFile(os.Args[3], BitToByte(DevideBits(fileBits, 8)))
+					 var mult uint
+					 if cL >= 4 {
+								switch cmd[3] {
+								case "weak": mult = 3
+								case "normal": mult = 8
+								case "strong": mult = 32
+								case "super": mult = 64
+								case "ludicrous": mult = 255
+								default: { 
+										  fmt.Println("Unknown; Defaulted to 8.")
+										  mult = 8
+								}
+								}
+					 } else {
+								mult = 8
+					 }
+
+					 if errArea := IsCorrupt(fileBits, mult); errArea != -1 {
+								fmt.Println("There's somethign wrong. Either:\n=-=-= File is corrupt, check round: ", errArea, "\n=-=-= You have the wrong multiplicity, try weak, normal, strong, super and ludicrous")
+					 }
+					 WriteFile(os.Args[3], BitToByte(DevideBits(fileBits, mult)))
 		  }	else {
 					 fmt.Println("Not those Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
 		  }
@@ -98,17 +130,6 @@ func BitToByte(data []bit) []byte {
 		  return byteSlice
 }
 
-// Converts a bit slice to a byte slice, but treats each bit as a whole byte. This is 8x redundancy.
-func RawBitToByte(data []bit) []byte {
-		  length := len(data)
-		  var byteSlice []byte
-
-		  for i := 0; i < length; i++ {
-					 byteSlice = append(byteSlice, byte(data[i]))
-		  }
-		  return byteSlice
-}
-
 func BreakdownByte(input byte) []bit {
 		  bitMask := byte(255)
 		  var redByte []bit
@@ -137,14 +158,24 @@ func MultiplyBits(data []bit, ply uint) []bit {
 		  return redSlice
 }
 
-// Pre-built operations
+// Multiplicity Header - Overflow check not included
 
-// Appends a filan byte which shows the multiplicity
-func REDCopy(filename string, multiplicity uint) {
-		  WriteFile(filename + ".red", append(RawBitToByte(MultiplyBits(ByteToBit(OpenFile(filename)), multiplicity)), byte(multiplicity * 8))) 
-		  // Wanted to try composing it... is there some other syntax for this?...
+func AddHeader(data []byte, mult uint) []byte {
+		  var headedData []byte
+		  headedData = append(headedData, byte(mult))
+		  headedData = append(headedData, data...)
+
+		  return headedData
 }
 
+func StripHeader(hData []byte) ([]byte, uint) {
+		  var sData []byte
+		  sData = append(sData, hData[1:]...)
+
+		  return sData, uint(hData[0])
+}
+
+// Corruption checking
 func Homogeneous[E comparable](slice []E) bool {
 		  length := len(slice)
 		  ref := slice[0]
