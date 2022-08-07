@@ -11,17 +11,36 @@ func main() {
 
 		  if len(os.Args[1:]) < 1 {
 					 fmt.Println("Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
+		  } else if os.Args[1] == "test" {
+					 // --- Opened file
+					 file := OpenFile(os.Args[2])
+					 fmt.Println("The base file is : ", len(file))
+					 for i := 0; i < len(file); i++ {
+								fmt.Printf("%08b", file[i])
+					 }
+					 fmt.Println("")
+
+					 // -- Base file converted to bits
+					 fileBits := ByteToBit(file)
+					 fmt.Println("The base file bits : ", len(fileBits))
+
+					 //
+					 file = BitToByte(MultiplyBits(fileBits, 8))
+					 fmt.Println(len(file))
+					 for i := 0; i < len(file); i++ {
+								fmt.Printf("%08b", file[i])
+					 }
+					 fmt.Println("")
+
 		  } else if os.Args[1] == "write" {
 					 file := OpenFile(os.Args[2])
-					 fmt.Println(file)
-					 //fmt.Println(len(file))
 					 fileBits := ByteToBit(file)
-					 //fmt.Println(fileBits)
-					 //fmt.Println(len(fileBits))
 					 WriteFile(os.Args[2] + ".RED", BitToByte(MultiplyBits(fileBits, 8)))
 		  } else if os.Args[1] == "read" {
 					 file := OpenFile(os.Args[2])
+					 fmt.Println("--------------", len(file))
 					 fileBits := ByteToBit(file)
+					 fmt.Println(fileBits)
 					 WriteFile(os.Args[3], BitToByte(DevideBits(fileBits, 8)))
 		  }	else {
 					 fmt.Println("Not those Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
@@ -65,9 +84,9 @@ func BitToByte(data []bit) []byte {
 		  var (
 					 byteSlice []byte
 					 singleByte byte
-					 i int
 		  )
 
+		  i := 0
 		  for i < length {
 					 for j := 0; j < 8; j++ {//Maybe I can reduce insted of double loop
 								singleByte = singleByte | ((byte(data[i + j])) & byte(Pow(2, 7-j)))
@@ -94,7 +113,7 @@ func BreakdownByte(input byte) []bit {
 		  bitMask := byte(255)
 		  var redByte []bit
 		  for i := 0; i < 8; i++ {
-					 if 0 < (bitMask & byte(2^(7-i))) & input {
+					 if 0 < (bitMask & byte(Pow(2, (7-i)))) & input {
 								redByte = append(redByte, one)
 					 } else {
 								redByte = append(redByte , zero)
