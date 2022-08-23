@@ -10,10 +10,29 @@ func main() {
 		  cmd := os.Args
 		  cL := len(cmd[1:])
 		  if cL < 1 {
-					 fmt.Println("Args please. One of either 'read' &  filename to red copy or 'write' 2 file names.")
-		  } else if cmd[1] == "test" {
+					 fmt.Println("Args please.\nTry \"redcopy h\" for help.")
+		  } else if cmd[1] == "h" || cmd[1] == "help" {
+					 fmt.Println("R.E.D Copy - Redundant Error-resistant Digital Copies")
+					 fmt.Println("")
+					 fmt.Println("redcopy write [file to copy] {multiplicity} {header}")
+					 fmt.Println("redcopy read [source file] [name of the extracted file] [multiplicity")
+					 fmt.Println("")
+					 fmt.Println("[] => Mandatory field, {} => Optional field")
+					 fmt.Println("--- Write ---")
+					 fmt.Println("")
+					 fmt.Println("Multiplicity -> defaults to 8.")
+					 fmt.Println("Header -> Defaults to ture. Use \"false\" to set the file with a header.")
+					 fmt.Println("")
+					 fmt.Println("--- Read ---")
+					 fmt.Println("")
+					 fmt.Println("Read automatically checks the red file for a header and ignores manual multiplicity if there is a header")
+					 fmt.Println("")
+					 fmt.Println("")
+					 fmt.Println("")
+					 
+		  }else if cmd[1] == "test" {
 					 // --- Opened file
-					 file := OpenFile(os.Args[2])
+					 file := OpenFile(cmd[2])
 					 fmt.Println("The base file is : ", len(file))
 					 for i := 0; i < len(file); i++ {
 								fmt.Printf("%08b", file[i])
@@ -33,28 +52,35 @@ func main() {
 					 fmt.Println("")
 
 		  } else if cmd[1] == "write" {
-					 file := OpenFile(os.Args[2])
+					 file := OpenFile(cmd[2])
 					 fileBits := ByteToBit(file)
 
-					 var mult uint
+					 var mult byte
 					 if cL >= 3 {
 								switch cmd[3] {
 								case "weak": mult = 3
 								case "normal": mult = 8
 								case "strong": mult = 32
 								case "super": mult = 64
-								case "ludicrous": mult = 255
+								case "ludicrous": mult = 254
 								default: mult = 8
 								}
 					 } else {
 								mult = 8
 					 }
-					 WriteFile(cmd[2] + ".RED", BitToByte(MultiplyBits(fileBits, mult)))
+					 file = BitToByte(MultiplyBits(fileBits, mult))
+					 if cL >= 4 && cmd[4] == "false" {
+								fmt.Println("This R.E.D Copy is being written without a header byte. This is not recomended.")
+					 } else {
+								file = AddHeader(file, mult)
+					 }
+					 WriteFile(cmd[2] + ".RED", file)
 		  } else if cmd[1] == "read" {
 					 file := OpenFile(os.Args[2])
-					 fileBits := ByteToBit(file)
-					 var mult uint
-					 if cL >= 4 {
+					 var mult byte
+					 if file[0] != 0 && file[0] != 255 {
+								file, mult = StripHeader(file)
+					 } else if cL >= 4 {
 								switch cmd[3] {
 								case "weak": mult = 3
 								case "normal": mult = 8
@@ -62,16 +88,17 @@ func main() {
 								case "super": mult = 64
 								case "ludicrous": mult = 255
 								default: { 
-										  fmt.Println("Unknown; Defaulted to 8.")
+										  fmt.Println("Unknown; Multiplicity defaulted to 8.")
 										  mult = 8
 								}
 								}
 					 } else {
 								mult = 8
 					 }
+					 fileBits := ByteToBit(file)
 
 					 if errArea := IsCorrupt(fileBits, mult); errArea != -1 {
-								fmt.Println("There's somethign wrong. Either:\n=-=-= File is corrupt, check round: ", errArea, "\n=-=-= You have the wrong multiplicity, try weak, normal, strong, super and ludicrous")
+								fmt.Println("There's somethign wrong. Either:\n=-=-= File is corrupt, check around: ", errArea, "\n=-=-= You have the wrong multiplicity, try weak, normal, strong, super and ludicrous")
 					 }
 					 WriteFile(os.Args[3], BitToByte(DevideBits(fileBits, mult)))
 		  }	else {
@@ -100,6 +127,10 @@ const (
 		  one bit = 255
 )
 
+
+// Bit - Byte conversion
+
+// Converts a byte slice to a bit slice
 func ByteToBit(data []byte) []bit {
 		  length := len(data)
 		  var bitSlice []bit
@@ -121,7 +152,7 @@ func BitToByte(data []bit) []byte {
 		  i := 0
 		  for i < length {
 					 for j := 0; j < 8; j++ {//Maybe I can reduce insted of double loop
-								singleByte = singleByte | ((byte(data[i + j])) & byte(Pow(2, 7-j)))
+								singleByte = singleByte | ((byte(data[i + j])) & Pow(2, 7-j))
 					 }
 					 byteSlice = append(byteSlice, singleByte)
 					 i += 8
@@ -134,7 +165,7 @@ func BreakdownByte(input byte) []bit {
 		  bitMask := byte(255)
 		  var redByte []bit
 		  for i := 0; i < 8; i++ {
-					 if 0 < (bitMask & byte(Pow(2, (7-i)))) & input {
+					 if 0 < (bitMask & Pow(2, (7-i) )) & input {
 								redByte = append(redByte, one)
 					 } else {
 								redByte = append(redByte , zero)
@@ -143,9 +174,23 @@ func BreakdownByte(input byte) []bit {
 		  return redByte
 }
 
-// --- Bit slice multiply
+// --- Bit slice multiplication
 
-func MultiplyBits(data []bit, ply uint) []bit {
+func MultiplyBits(data []bit, ply byte) []bit {
+		  length := len(data)
+		  var redSlice []bit
+
+		  for i := 0; i < length; i++ {
+					 for j := 0; j < int(ply); j++ {
+								redSlice = append(redSlice, data[i])
+					 }
+		  }
+
+		  return redSlice
+}
+
+
+func BigMultiplyBits(data []bit, ply uint) []bit {
 		  length := len(data)
 		  var redSlice []bit
 
@@ -160,22 +205,24 @@ func MultiplyBits(data []bit, ply uint) []bit {
 
 // Multiplicity Header - Overflow check not included
 
-func AddHeader(data []byte, mult uint) []byte {
+func AddHeader(data []byte, mult byte) []byte {
 		  var headedData []byte
-		  headedData = append(headedData, byte(mult))
+		  headedData = append(headedData, mult)
 		  headedData = append(headedData, data...)
 
 		  return headedData
 }
 
-func StripHeader(hData []byte) ([]byte, uint) {
+func StripHeader(hData []byte) ([]byte, byte) {
 		  var sData []byte
 		  sData = append(sData, hData[1:]...)
 
-		  return sData, uint(hData[0])
+		  return sData, hData[0]
 }
 
 // Corruption checking
+
+// Checks that every element in a slice is the same.
 func Homogeneous[E comparable](slice []E) bool {
 		  length := len(slice)
 		  ref := slice[0]
@@ -209,23 +256,23 @@ func DominantElem[E comparable](slice []E) E {
 		  return domElem
 }
 
-func IsCorrupt(data []bit, multiplicity uint) int {
-		  length := uint(len(data))
+func IsCorrupt(data []bit, multiplicity byte) int {
+		  length := len(data)
 
-		  for i := uint(0); i < length; i += multiplicity {
-					 if !Homogeneous(data[i:i+multiplicity]) {
-								return int(i)
+		  for i := 0; i < length; i += int(multiplicity) {
+					 if !Homogeneous(data[i:i+int(multiplicity)]) {
+								return i
 					 }
 		  }
 		  return -1
 }
 
-func CorruptionAwareBitDevide(redData []bit, multiplicity uint) []bit { // better error system
-		  length := uint(len(redData))
+func CorruptionAwareBitDevide(redData []bit, multiplicity byte) []bit { // better error system
+		  length := len(redData)
 		  var clearData []bit
 
-		  for i := uint(0); i < length; i += multiplicity {
-					 clearData = append(clearData, DominantElem(redData[i:i+multiplicity]))
+		  for i := 0; i < length; i += int(multiplicity) {
+					 clearData = append(clearData, DominantElem(redData[i:i + int(multiplicity)]))
 		  }
 		  return clearData
 		  
@@ -233,14 +280,14 @@ func CorruptionAwareBitDevide(redData []bit, multiplicity uint) []bit { // bette
 
 // Reducess a redundant (RED) series of bits to clear data (the origianl file).
 //This is an unsafe method which assumes no corruption and that you remeber the multiplicity correctly
-func DevideBits(redData []bit, multiplicity uint) []bit {
+func DevideBits(redData []bit, multiplicity byte) []bit {
 		  var clearData []bit
-		  length := uint(len(redData))
-		  i := uint(0)
-
+		  length := len(redData)
+		  i := 0
+ 
 		  for i < length {
 					 clearData = append(clearData, redData[i])
-					 i += multiplicity
+					 i += int(multiplicity)
 		  }
 
 		  return clearData
