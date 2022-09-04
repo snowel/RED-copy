@@ -2,7 +2,6 @@
 
 Redundant Error-resistant Digital Copy is a set of functions and a an accompanying CLI tool which allow for the creation and reading of error redundant files by multiplying the occurences of bits. 
 
-
 ## Use
 
 The redcopy CLI can be installed and used as a stand-alone tool, or the functionallity can be incorporated into your own projects with the use of the `redlib`.
@@ -13,15 +12,19 @@ The CLI uses sub-commands, such as `redcopy read [read args]` and `redcopy write
 
 #### `redcopy write`
 
-`redcopy write` takes a file and generates a RED file with multiplied bits. It takes the follwoing positional arguments:
+`redcopy write` takes a file and generates a RED file with multiplied bits. It takes the following positional arguments:
 `[source file path] [multiplicity] [header]`
 
 Multiplicity is a preset among the following. Omitting a multiplicity will default to `normal`.
 
 `"weak": mult = 3`
+
 `"normal": mult = 8`
+
 `"strong": mult = 32`
+
 `"super": mult = 64`
+
 `"ludicrous": mult = 254`
 
 Header places a single byte at the head of the file, the value of which is the multiplicity. Defaults to true, can be set to false to skip the header. *Note: these are positional arguments! If you want to ovewrite the default header toggle, you must specify a multiplicity.*
@@ -29,13 +32,13 @@ Header places a single byte at the head of the file, the value of which is the m
 
 #### `redcopy read`
 
-`redcopy read` will demultiply a RED file into its original bits. It takes the following positional arguments:
+`redcopy read` will devide a RED file into its original bits. It takes the following positional arguments:
 
 `[source file path] [output file path] [multiplicity]`
 
-If the RED file has a header, the header will automatically be used as multiplicity and the third argument is not needed.
+If the RED file has a header, the header will automatically be used as multiplicity and the third argument is not needed (and ignored).
 
-If the RED file does not have a header the thir argument must be one of the five multiplicity presets:
+If the RED file does not have a header the third argument must be one of the five multiplicity presets:
 
 `"weak": mult = 3`
 `"normal": mult = 8`
@@ -51,3 +54,4 @@ If the RED file does not have a header the thir argument must be one of the five
 * Test Suite
 * Corruption aware multiplicity guessing
 * Corruption aware bit devide
+* RED Opperations, allowing RED data stream and mutations

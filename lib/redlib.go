@@ -15,7 +15,7 @@ func ByteToBit(data []byte) []bit {
 		  var bitSlice []bit
 
 		  for i := 0; i < length; i++ {
-					 bitSlice = append(bitSlice, BreakdownByte(data[i])...)
+					 bitSlice = append(bitSlice, breakdownByte(data[i])...)
 		  }
 		  return bitSlice
 }
@@ -31,7 +31,7 @@ func BitToByte(data []bit) []byte {
 		  i := 0
 		  for i < length {
 					 for j := 0; j < 8; j++ {//Maybe I can reduce insted of double loop
-								singleByte = singleByte | ((byte(data[i + j])) & Pow(2, 7-j))
+								singleByte = singleByte | ((byte(data[i + j])) & pow(2, 7-j))
 					 }
 					 byteSlice = append(byteSlice, singleByte)
 					 i += 8
@@ -40,11 +40,13 @@ func BitToByte(data []bit) []byte {
 		  return byteSlice
 }
 
-func BreakdownByte(input byte) []bit {
+// Conversion helpers
+
+func breakdownByte(input byte) []bit {
 		  bitMask := byte(255)
 		  var redByte []bit
 		  for i := 0; i < 8; i++ {
-					 if 0 < (bitMask & Pow(2, (7-i) )) & input {
+					 if 0 < (bitMask & pow(2, (7-i) )) & input {
 								redByte = append(redByte, one)
 					 } else {
 								redByte = append(redByte , zero)
@@ -55,6 +57,7 @@ func BreakdownByte(input byte) []bit {
 
 // --- Bit slice multiplication
 
+// Multiplies a bit slice.
 func MultiplyBits(data []bit, ply byte) []bit {
 		  length := len(data)
 		  var redSlice []bit
@@ -69,6 +72,9 @@ func MultiplyBits(data []bit, ply byte) []bit {
 }
 
 
+// Multiplies a bit slice without size restrition.
+// *** Not compatible with red header functions.
+// TODO int rather than Uint to be compatible with qualifying multiplicity?
 func BigMultiplyBits(data []bit, ply uint) []bit {
 		  length := len(data)
 		  var redSlice []bit
@@ -146,7 +152,7 @@ func IsCorrupt(data []bit, multiplicity byte) int {
 		  return -1
 }
 
-func CorruptionAwareBitDevide(redData []bit, multiplicity byte) []bit { // better error system
+func CorruptionAwareBitDevide(redData []bit, multiplicity byte) []bit { 
 		  length := len(redData)
 		  var clearData []bit
 
@@ -157,8 +163,10 @@ func CorruptionAwareBitDevide(redData []bit, multiplicity byte) []bit { // bette
 		  
 }
 
+// Bit slice devide - RED files to clear files
+
 // Reducess a redundant (RED) series of bits to clear data (the origianl file).
-//This is an unsafe method which assumes no corruption and that you remeber the multiplicity correctly
+// *** This is an unsafe method which assumes no corruption and that you remeber the multiplicity correctly.
 func DevideBits(redData []bit, multiplicity byte) []bit {
 		  var clearData []bit
 		  length := len(redData)
@@ -171,23 +179,124 @@ func DevideBits(redData []bit, multiplicity byte) []bit {
 
 		  return clearData
 }
-/*
-// Determin the multiplicity of a RED file
-func QualifyMulitplicity(data []bit) int {
-		  passed := false
-		  var mult int
 
-		  for passed == false {
-					 // figure out the smallest
+
+// Multiplicity guessing
+
+// Determin the multiplicity of a RED file.
+// Return val of -1 indicates no conffident guess can be made.
+// TODO - add multiple negative returns to specify which test fails.
+func QualifyMulitplicity(data []bit) int {
+		  length := len(data)
+		  
+		  // collect the lengths of all the sequences of same bits
+		  sequ := sequenceLens(data, length)
+		  
+		  // take the shortest as the possible mult
+		  candidate := shortestSequ(sequ)
+
+		  // test the various required properties
+		  passed := true
+		  
+		  if length % candidate != 0 {passed = false}
+		  if !sequMultiple(sequ, candidate) {passed = false}
+
+		  // return
+		  if passed {
+					 return candidate
+		  } else {
+					 return -1
 		  }
 
 }
 
-*/
+// Discreet helpers
 
-func Pow(num byte, pow int) byte {
-		  if pow == 0 {return 1}
-		  if pow == 1 {return num}
-		  if pow == 2 {return num * num}
-		  return Pow(num, pow - 1) * num 
+
+// Collect the lengths of all the sequences of same bits.
+func sequenceLens(data []bit, length int) []int {
+		  sequ := make([]int, 0)
+		  travel := data[0]
+		  counter := 1
+		  for i := 1; i < length; i++ {
+					 if data[i] == travel {
+								counter++
+					 } else {
+								sequ = append(sequ, counter)
+
+								counter = 1
+								travel = data[i]
+					 }
+		  }
+		  return sequ
+}
+
+func shortestSequ(sequ []int) int {
+		  travel := sequ[0]
+
+		  for _, val := range sequ {
+					 if travel > val {
+								travel = val
+					 }
+		  }
+
+		  return travel
+
+}
+
+// Checks if every element of a sequence is a multiple of the "unit".
+func sequMultiple(sequ []int, unit int) bool {
+		  for _, val := range sequ {
+					 if val % unit != 0 {
+								return false
+					 }
+		  }
+		  return true
+}
+
+//SEQU TEST - TODO refac
+
+func SqueSumTest(data []bit) bool {
+		  length := len(data)
+		  sequ := sequenceLens(data, length)
+		  sequSum := 0
+		  for _, val := range sequ {
+					 sequSum += val
+		  }
+
+		  if sequSum == length {
+					 return true
+		  } else {
+					 return false
+		  }
+}
+
+// Numerical helpers
+
+func divisible(length int) []int {
+		  var absLength int
+		  if length < 0 {
+					 absLength = length * -1
+		  } else {
+					 absLength = length
+		  }
+		  allDiv := make([]int, 0)
+		  counter := 1
+		  for counter < absLength {
+					 if absLength % counter == 0 {
+								allDiv = append(allDiv, counter)
+					 }
+					 
+					 counter++
+		  }
+		  allDiv = append(allDiv, absLength)
+
+		  return allDiv
+}
+
+func pow(num byte, expo int) byte {
+		  if expo == 0 {return 1}
+		  if expo == 1 {return num}
+		  if expo == 2 {return num * num}
+		  return pow(num, expo - 1) * num 
 }

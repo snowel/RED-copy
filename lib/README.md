@@ -2,7 +2,7 @@
 
 #### Bit Type
 
-The bit type is intended to represent a single bit, the 1 or 0 of a digital file. The bit type is an alias for a byte in which its enumerated values *zero* and *one* represent byte(0) and byte(255) repsectively.
+The `bit` type is intended to represent a single bit, the 1 or 0 of a digital file. The `bit` type is an alias for a byte in which its enumerated values `zero` and `one` represent `byte(0)` and `byte(255)` repsectively.
 
 #### Bit - Byte Conversion
 
@@ -14,7 +14,7 @@ The bit type is intended to represent a single bit, the 1 or 0 of a digital file
 
 `BigMultiplyBits(data []bit, multiplicity uint) []bit` allows the multiplication of a bit slice by an arbitraty unsinged integer values. Not compatible with headers.
 
-#### Deviding Bits - Reducing redundant files to their original forms
+#### Deviding Bits - Reducing redundant files to their original bit sequences
 
 `DevideBits` allows the devision of a R.E.D file of known multiplicity. *This is not corruption aware. The first bit of each multiplicity segement is used.*
 
@@ -22,5 +22,5 @@ The bit type is intended to represent a single bit, the 1 or 0 of a digital file
 
 #### Corruption Awareness
 
-`IsCorrupt(data []bit, multiplicity byte) int` checks is a slice of type `bit` with known multiplity has any sign of corruption. A return values of `-1` indicates no corruption, otherwise the indicated intiger show the index of possible corruption.
+`IsCorrupt(data []bit, multiplicity byte) int` checks is a slice of type `bit` with known multiplity has any sign of corruption. A return values of `-1` indicates no corruption, otherwise the return value shows the index of possible corruption.
 
