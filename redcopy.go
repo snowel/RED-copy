@@ -22,7 +22,7 @@ func main() {
 					 fmt.Println("--- Write ---")
 					 fmt.Println("")
 					 fmt.Println("Multiplicity -> defaults to 8.")
-					 fmt.Println("Header -> Defaults to ture. Use \"false\" to set the file with a header.")
+					 fmt.Println("Header -> Defaults to true. Use \"false\" to set the file with a header.")
 					 fmt.Println("")
 					 fmt.Println("--- Read ---")
 					 fmt.Println("")
