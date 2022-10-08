@@ -36,18 +36,24 @@ func main() {
 					 file := OpenFile(cmd[2])
 					 fmt.Println("The base file is : ", len(file))
 					 for i := 0; i < len(file); i++ {
-								fmt.Printf("%08b", file[i])
+								fmt.Printf("%08b ", file[i])
 					 }
 					 fmt.Println("")
 
-					 // -- Base file converted to []bit
-					 fileBits := ByteToBit(file)
-					 fmt.Println("The base file bits : ", len(fileBits))
+					 // -- Stagger
 
-					 file = BitToByte(MultiplyBits(fileBits, 8))
-					 fmt.Println(len(file))
+					 file = StaggerFile(file, 2, DefaultFingerprint)
+					 fmt.Println("The stagger file is : ", len(file))
+					 fmt.Println("The stagger file shousld be : ", 5*2+(64+3+1)*2)
 					 for i := 0; i < len(file); i++ {
-								fmt.Printf("%08b", file[i])
+								fmt.Printf("%08b %d  ", file[i], file[i])
+					 }
+					 fmt.Println("")
+
+					 file, _ = Unstagger(file, DefaultFingerprint)
+					 fmt.Println("The base file is : ", len(file))
+					 for i := 0; i < len(file); i++ {
+								fmt.Printf("%08b ", file[i])
 					 }
 					 fmt.Println("")
 
